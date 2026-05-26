@@ -1,0 +1,17 @@
+# 미디어 파일 (샘플 외 학습자 본인 회의 녹음 제외 목적)
+*.pdf
+*.wav
+*.m4a
+*.mp3
+*.mp4
+*.webm
+*.ogg
+*.flac
+
+# 환경변수
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db

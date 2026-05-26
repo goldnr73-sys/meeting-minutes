@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>회의록 자동 생성기</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'MS Sans Serif', Tahoma, Arial, sans-serif;
+      font-size: 12px;
+      background-color: #1a6fd4;
+      background-image: radial-gradient(circle, rgba(255,255,255,0.18) 1px, transparent 1px);
+      background-size: 20px 20px;
+      color: #000;
+      min-height: 100vh;
+      padding-bottom: 70px;
+    }
+
+    /* ── Browser Bar (top) ───────────────────────── */
+    .browser-bar {
+      background: #d4d0c8;
+      border-bottom: 2px solid #808080;
+      border-top: 2px solid #fff;
+      padding: 4px 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .browser-nav-btn {
+      background: #d4d0c8;
+      border-top: 2px solid #fff;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #404040;
+      border-bottom: 2px solid #404040;
+      padding: 2px 6px;
+      font-size: 12px;
+      cursor: pointer;
+      min-width: 24px;
+      text-align: center;
+      color: #000;
+    }
+    .browser-nav-btn:active {
+      border-top: 2px solid #404040;
+      border-left: 2px solid #404040;
+      border-right: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+    }
+    .browser-url-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      background: #fff;
+      border-top: 2px solid #808080;
+      border-left: 2px solid #808080;
+      border-right: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      padding: 2px 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      color: #000;
+      overflow: hidden;
+    }
+    .browser-url-text { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .browser-url-arrow {
+      background: #d4d0c8;
+      border-top: 2px solid #fff;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #404040;
+      border-bottom: 2px solid #404040;
+      padding: 0 4px;
+      font-size: 10px;
+      cursor: pointer;
+      color: #000;
+    }
+    .browser-bookmark {
+      background: #d4d0c8;
+      border-top: 2px solid #fff;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #404040;
+      border-bottom: 2px solid #404040;
+      padding: 2px 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .browser-badge {
+      background: #1a6fd4;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 0;
+      border: 1px solid #0040a0;
+    }
+
+    /* ── Layout ─────────────────────────────────── */
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 16px 12px 24px;
+    }
+
+    /* ── Win98 Window Card ───────────────────────── */
+    .card {
+      background: #d4d0c8;
+      border-top: 2px solid #fff;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #808080;
+      border-bottom: 2px solid #808080;
+      margin-bottom: 12px;
+      padding: 0;
+    }
+    .win-titlebar {
+      background: linear-gradient(to right, #000080, #1084d0);
+      color: #fff;
+      font-size: 11px;
+      font-weight: bold;
+      padding: 3px 4px 3px 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+    }
+    .win-titlebar-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .win-titlebar-icon { font-size: 13px; }
+    .win-title-btns { display: flex; gap: 2px; }
+    .win-title-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 14px;
+      background: #d4d0c8;
+      border-top: 1px solid #fff;
+      border-left: 1px solid #fff;
+      border-right: 1px solid #404040;
+      border-bottom: 1px solid #404040;
+      font-size: 8px;
+      color: #000;
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+    }
+    .win-body {
+      padding: 12px 14px;
+    }
+
+    .step-badge {
+      background: #00bcd4;
+      color: #000;
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-block;
+    }
+
+    /* ── Form ───────────────────────────────────── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-group.full { grid-column: 1 / -1; }
+    label { font-size: 11px; font-weight: 700; color: #000; }
+
+    input[type="text"], input[type="password"], input[type="date"], textarea, select {
+      background: #fff;
+      border-top: 2px solid #808080;
+      border-left: 2px solid #808080;
+      border-right: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      border-radius: 0;
+      padding: 4px 6px;
+      font-size: 12px;
+      font-family: 'MS Sans Serif', Tahoma, Arial, sans-serif;
+      color: #000;
+      outline: none;
+      width: 100%;
+    }
+    input:focus, textarea:focus {
+      outline: 1px dotted #000;
+      outline-offset: -2px;
+    }
+    textarea { resize: vertical; min-height: 130px; line-height: 1.5; }
+    select { cursor: pointer; }
+
+    /* ── Buttons ─────────────────────────────────── */
+    .btn {
+      padding: 7px 14px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: 'MS Sans Serif', Tahoma, Arial, sans-serif;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+      transition: transform 0.07s, box-shadow 0.07s;
+    }
+    .btn-primary {
+      background: #1a1a1a;
+      color: #fff;
+      box-shadow: 0 4px 0 #000, 0 5px 4px rgba(0,0,0,0.35);
+    }
+    .btn-primary:hover { background: #333; }
+    .btn-primary:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #000;
+    }
+    .btn-secondary {
+      background: #555;
+      color: #eee;
+      box-shadow: 0 3px 0 #222, 0 4px 3px rgba(0,0,0,0.3);
+    }
+    .btn-secondary:hover { background: #666; }
+    .btn-secondary:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #222;
+    }
+    .btn-success {
+      background: #005a00;
+      color: #fff;
+      box-shadow: 0 4px 0 #002200, 0 5px 4px rgba(0,0,0,0.3);
+    }
+    .btn-success:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #002200;
+    }
+    .btn-sm { padding: 5px 10px; font-size: 11px; }
+    .btn-lg {
+      width: 100%;
+      padding: 13px;
+      font-size: 14px;
+      border-radius: 6px;
+    }
+    .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+
+    /* ── API key row ────────────────────────────── */
+    .key-row { display: flex; gap: 6px; align-items: center; }
+    .key-row input { flex: 1; }
+    .key-saved { font-size: 11px; color: #006600; font-weight: 700; margin-top: 2px; }
+
+    /* ── Tabs ───────────────────────────────────── */
+    .tabs {
+      display: flex;
+      border-bottom: 2px solid #808080;
+      margin-bottom: 12px;
+      gap: 0;
+    }
+    .tab {
+      padding: 5px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      background: #c0c0c0;
+      border-top: 2px solid #fff;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #808080;
+      border-bottom: none;
+      color: #444;
+      margin-right: 2px;
+      position: relative;
+      bottom: -2px;
+    }
+    .tab.active {
+      background: #d4d0c8;
+      color: #000;
+      font-weight: 700;
+      border-bottom: 2px solid #d4d0c8;
+      z-index: 1;
+    }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* ── File upload ─────────────────────────────── */
+    .upload-area {
+      border: 2px dashed #808080;
+      padding: 32px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .2s;
+      position: relative;
+      background: repeating-conic-gradient(#c0c0c0 0% 25%, #d4d0c8 0% 50%) 0 0 / 10px 10px;
+    }
+    .upload-area:hover { border-color: #1084d0; background: #b8e0f0; }
+    .upload-area.dragover { border-color: #1084d0; background: #b8e0f0; }
+    .upload-area input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .upload-icon { font-size: 32px; margin-bottom: 6px; }
+    .upload-text { font-size: 13px; color: #000; font-weight: 700; }
+    .upload-hint { font-size: 11px; color: #555; margin-top: 4px; }
+
+    .file-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #c8e0f8;
+      border-top: 2px solid #808080;
+      border-left: 2px solid #808080;
+      border-right: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      padding: 8px 12px;
+      margin-top: 8px;
+      font-size: 12px;
+    }
+    .file-pill-name {
+      flex: 1;
+      color: #000080;
+      font-weight: 700;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: 'Courier New', monospace;
+    }
+
+    /* ── Status box ─────────────────────────────── */
+    .status-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #d4d0c8;
+      border-top: 2px solid #808080;
+      border-left: 2px solid #808080;
+      border-right: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: #000;
+      margin-top: 10px;
+    }
+    .spinner {
+      width: 16px; height: 16px; flex-shrink: 0;
+      border: 2px solid #808080;
+      border-top-color: #000080;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Transcript accordion ───────────────────── */
+    .accordion-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #c0c0c0;
+      border-top: 2px solid #fff;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #808080;
+      border-bottom: 2px solid #808080;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 11px;
+      color: #000;
+      margin-top: 10px;
+      user-select: none;
+      font-weight: 600;
+    }
+    .accordion-header:active {
+      border-top: 2px solid #808080;
+      border-left: 2px solid #808080;
+      border-right: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+    }
+    .accordion-body {
+      border: 2px inset #808080;
+      padding: 10px 12px;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #000;
+      background: #fff;
+      white-space: pre-wrap;
+      display: none;
+      max-height: 220px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+    }
+
+    /* ── Alert ──────────────────────────────────── */
+    .alert {
+      padding: 10px 12px;
+      font-size: 12px;
+      margin-top: 8px;
+      line-height: 1.6;
+      white-space: pre-line;
+      font-weight: 600;
+    }
+    .alert-error {
+      background: #fff0f0;
+      color: #800000;
+      border-top: 2px solid #808080;
+      border-left: 2px solid #808080;
+      border-right: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+    }
+
+    /* ── Result card ────────────────────────────── */
+    .result-card {
+      background: #d4d0c8;
+      border-top: 2px solid #fff;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #808080;
+      border-bottom: 2px solid #808080;
+      overflow: hidden;
+      margin-top: 14px;
+    }
+    .result-header {
+      background: linear-gradient(to right, #000080, #1084d0);
+      padding: 3px 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .result-header-title { font-size: 11px; font-weight: bold; color: #fff; }
+    .result-actions { display: flex; gap: 4px; }
+    .result-body { padding: 20px 22px 24px; background: #fff; margin: 4px; }
+
+    /* ── Rendered minutes ───────────────────────── */
+    #minutesOutput h2 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #000080;
+      border-bottom: 1px solid #c0c0c0;
+      padding-bottom: 4px;
+      margin: 18px 0 8px;
+      font-family: 'MS Sans Serif', Tahoma, Arial, sans-serif;
+    }
+    #minutesOutput h2:first-child { margin-top: 0; }
+    #minutesOutput ul { padding-left: 0; list-style: none; }
+    #minutesOutput ul li {
+      padding: 2px 0 2px 14px;
+      position: relative;
+      font-size: 12px;
+      line-height: 1.7;
+      color: #000;
+    }
+    #minutesOutput ul li::before {
+      content: '>';
+      position: absolute;
+      left: 2px;
+      color: #1084d0;
+      font-weight: 700;
+      font-family: 'Courier New', monospace;
+    }
+    #minutesOutput p { font-size: 12px; line-height: 1.7; color: #000; margin: 5px 0; }
+    #minutesOutput table {
+      width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 12px;
+    }
+    #minutesOutput th {
+      background: #d4d0c8;
+      text-align: left;
+      padding: 5px 10px;
+      font-weight: 700;
+      color: #000;
+      border: 1px solid #808080;
+    }
+    #minutesOutput td {
+      padding: 5px 10px;
+      border: 1px solid #c0c0c0;
+      color: #000;
+      vertical-align: top;
+    }
+    #minutesOutput tr:nth-child(even) td { background: #f4f4f4; }
+    #minutesOutput hr { border: none; border-top: 1px solid #c0c0c0; margin: 12px 0; }
+    #minutesOutput strong { font-weight: 700; }
+
+    /* ── Hearts decoration ───────────────────────── */
+    .hearts-deco { pointer-events: none; }
+    .heart {
+      position: fixed;
+      font-size: 22px;
+      color: #ff69b4;
+      animation: heartFloat 3s ease-in-out infinite;
+      pointer-events: none;
+      z-index: 0;
+      text-shadow: 0 0 6px rgba(255,105,180,0.5);
+      user-select: none;
+    }
+    .heart:nth-child(1) { left: 3%;  top: 18%; animation-delay: 0s;    font-size: 18px; color: #ff1493; }
+    .heart:nth-child(2) { left: 8%;  top: 55%; animation-delay: 0.6s;  font-size: 26px; }
+    .heart:nth-child(3) { left: 2%;  top: 80%; animation-delay: 1.2s;  font-size: 16px; color: #ff1493; }
+    .heart:nth-child(4) { right: 3%; top: 22%; animation-delay: 0.3s;  font-size: 24px; }
+    .heart:nth-child(5) { right: 7%; top: 60%; animation-delay: 0.9s;  font-size: 18px; color: #ff1493; }
+    .heart:nth-child(6) { right: 2%; top: 85%; animation-delay: 1.5s;  font-size: 28px; }
+    .heart:nth-child(7) { left: 50%; top: 92%; animation-delay: 0.4s;  font-size: 16px; transform: translateX(-50%); }
+    @keyframes heartFloat {
+      0%, 100% { transform: translateY(0) rotate(-8deg); opacity: 0.85; }
+      50%       { transform: translateY(-14px) rotate(8deg); opacity: 1; }
+    }
+    .heart:nth-child(7) {
+      animation: heartFloat7 3s ease-in-out infinite;
+    }
+    @keyframes heartFloat7 {
+      0%, 100% { transform: translateX(-50%) translateY(0) rotate(-8deg); opacity: 0.85; }
+      50%       { transform: translateX(-50%) translateY(-14px) rotate(8deg); opacity: 1; }
+    }
+
+    /* ── Taskbar ─────────────────────────────────── */
+    .win-taskbar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 30px;
+      background: #d4d0c8;
+      border-top: 2px solid #fff;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 0 4px;
+      z-index: 999;
+    }
+    .taskbar-start {
+      background: #d4d0c8;
+      border-top: 2px solid #fff;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #404040;
+      border-bottom: 2px solid #404040;
+      font-weight: 700;
+      font-size: 11px;
+      padding: 2px 10px;
+      cursor: pointer;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .taskbar-start:active {
+      border-top: 2px solid #404040;
+      border-left: 2px solid #404040;
+      border-right: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+    }
+    .taskbar-divider {
+      width: 2px;
+      height: 20px;
+      background: #808080;
+      border-right: 1px solid #fff;
+      margin: 0 2px;
+    }
+    .taskbar-item {
+      background: #bbb;
+      border-top: 2px solid #808080;
+      border-left: 2px solid #808080;
+      border-right: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 10px;
+      cursor: default;
+      white-space: nowrap;
+    }
+    .taskbar-clock {
+      margin-left: auto;
+      font-size: 11px;
+      font-family: 'Courier New', monospace;
+      border-top: 2px solid #808080;
+      border-left: 2px solid #808080;
+      border-right: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      padding: 2px 8px;
+      background: #d4d0c8;
+      min-width: 56px;
+      text-align: center;
+    }
+
+    /* ── Print ───────────────────────────────────── */
+    @media print {
+      .browser-bar, .card, #generateBtn, #generateStatus, #errorBox,
+      .result-actions, .accordion-header, .hearts-deco, .win-taskbar { display: none !important; }
+      body { background: #fff; }
+      .result-card { border: none; box-shadow: none; margin: 0; }
+      .result-header { display: none; }
+      .result-body { padding: 0; margin: 0; }
+      #minutesOutput h2 { color: #000; border-color: #ccc; }
+      #minutesOutput th { background: #f0f0f0; color: #000; }
+    }
+
+    /* ── Misc ────────────────────────────────────── */
+    .hidden { display: none !important; }
+    @media (max-width: 560px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group.full { grid-column: 1; }
+      .result-body { padding: 12px; }
+      .heart { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Hearts decoration -->
+<div class="hearts-deco" aria-hidden="true">
+  <span class="heart">♥</span>
+  <span class="heart">♥</span>
+  <span class="heart">♥</span>
+  <span class="heart">♥</span>
+  <span class="heart">♥</span>
+  <span class="heart">♥</span>
+  <span class="heart">♥</span>
+</div>
+
+<!-- Browser bar -->
+<div class="browser-bar">
+  <button class="browser-nav-btn">←</button>
+  <button class="browser-nav-btn">→</button>
+  <button class="browser-nav-btn">🏠</button>
+  <div class="browser-url-wrap">
+    <span class="browser-url-text">HTTPS://회의록.자동생성기/AI-MEETING-MINUTES</span>
+    <span class="browser-url-arrow">▼</span>
+  </div>
+  <button class="browser-bookmark">★</button>
+  <span class="browser-badge" id="headerBadge">Groq · Gemini</span>
+</div>
+
+<div class="container">
+
+  <!-- ── STEP 1: API Keys ─────────────────────── -->
+  <div class="card">
+    <div class="win-titlebar">
+      <div class="win-titlebar-left">
+        <span class="win-titlebar-icon">🔑</span>
+        <span><span class="step-badge">1</span> &nbsp;API 키 설정</span>
+      </div>
+      <div class="win-title-btns">
+        <span class="win-title-btn">─</span>
+        <span class="win-title-btn">□</span>
+        <span class="win-title-btn">✕</span>
+      </div>
+    </div>
+    <div class="win-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>GROQ API KEY &nbsp;<span style="font-weight:400;color:#555">— 음성 변환</span></label>
+          <div class="key-row">
+            <input type="password" id="groqKey" placeholder="gsk_..." autocomplete="off">
+            <button class="btn btn-secondary btn-sm" onclick="saveKeys()">저장</button>
+          </div>
+          <div id="groqSaved" class="key-saved hidden">✓ 저장됨</div>
+        </div>
+        <div class="form-group">
+          <label>GEMINI API KEY &nbsp;<span style="font-weight:400;color:#555">— 회의록 생성</span></label>
+          <div class="key-row">
+            <input type="password" id="geminiKey" placeholder="AIza..." autocomplete="off">
+            <button class="btn btn-secondary btn-sm" onclick="saveKeys()">저장</button>
+          </div>
+          <div id="geminiSaved" class="key-saved hidden">✓ 저장됨</div>
+        </div>
+        <div class="form-group full">
+          <label>GEMINI 모델 &nbsp;<span style="font-weight:400;color:#555">(503 오류 시 다른 모델로 변경)</span></label>
+          <select id="geminiModel" onchange="updateModelBadge()">
+            <option value="gemini-2.5-flash">gemini-2.5-flash (최신, 기본)</option>
+            <option value="gemini-2.0-flash">gemini-2.0-flash (안정판)</option>
+            <option value="gemini-1.5-flash">gemini-1.5-flash (백업용)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STEP 2: Meeting Info ─────────────────── -->
+  <div class="card">
+    <div class="win-titlebar">
+      <div class="win-titlebar-left">
+        <span class="win-titlebar-icon">📋</span>
+        <span><span class="step-badge">2</span> &nbsp;회의 기본 정보</span>
+      </div>
+      <div class="win-title-btns">
+        <span class="win-title-btn">─</span>
+        <span class="win-title-btn">□</span>
+        <span class="win-title-btn">✕</span>
+      </div>
+    </div>
+    <div class="win-body">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>회의명</label>
+          <input type="text" id="fTitle" placeholder="예) 2025년 1분기 마케팅 전략 회의">
+        </div>
+        <div class="form-group">
+          <label>일시</label>
+          <input type="text" id="fDate" placeholder="예) 2025-04-22 14:00">
+        </div>
+        <div class="form-group">
+          <label>장소</label>
+          <input type="text" id="fLocation" placeholder="예) 3층 대회의실">
+        </div>
+        <div class="form-group">
+          <label>참석자</label>
+          <input type="text" id="fParticipants" placeholder="예) 김철수, 이영희, 박지훈">
+        </div>
+        <div class="form-group">
+          <label>작성자</label>
+          <input type="text" id="fAuthor" placeholder="예) 홍길동">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STEP 3: Content Input ────────────────── -->
+  <div class="card">
+    <div class="win-titlebar">
+      <div class="win-titlebar-left">
+        <span class="win-titlebar-icon">🎙</span>
+        <span><span class="step-badge">3</span> &nbsp;회의 내용 입력</span>
+      </div>
+      <div class="win-title-btns">
+        <span class="win-title-btn">─</span>
+        <span class="win-title-btn">□</span>
+        <span class="win-title-btn">✕</span>
+      </div>
+    </div>
+    <div class="win-body">
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('audio', this)">🎵 음성 파일 업로드</div>
+        <div class="tab" onclick="switchTab('text', this)">📝 텍스트 직접 입력</div>
+      </div>
+
+      <!-- Audio pane -->
+      <div class="tab-pane active" id="pane-audio">
+        <div class="upload-area" id="uploadArea">
+          <input type="file" id="audioFile" accept=".mp3,.wav,.m4a,.webm,.ogg,.flac,.mp4"
+                 onchange="onFileSelect(this)">
+          <div class="upload-icon">🎵</div>
+          <div class="upload-text">음성 파일을 드래그하거나 클릭하여 업로드</div>
+          <div class="upload-hint">mp3 · wav · m4a · webm · ogg · flac &nbsp;|&nbsp; 25 MB 초과 시 자동 분할</div>
+        </div>
+
+        <div id="filePill" class="file-pill hidden">
+          <span>📎</span>
+          <span class="file-pill-name" id="fileName"></span>
+          <button class="btn btn-primary btn-sm" id="transcribeBtn" onclick="transcribeOnly()">🎙 변환하기</button>
+          <button class="btn btn-secondary btn-sm" onclick="clearFile()">제거</button>
+        </div>
+
+        <div id="transcribeStatus" class="status-box hidden">
+          <div class="spinner"></div>
+          <span id="transcribeMsg">음성 변환 중입니다…</span>
+        </div>
+
+        <div id="transcriptAccordion" class="hidden">
+          <div class="accordion-header" onclick="toggleAccordion()">
+            <span>📄 변환된 텍스트 미리보기</span><span id="accordionArrow">▼</span>
+          </div>
+          <div class="accordion-body" id="transcriptBody"></div>
+        </div>
+      </div>
+
+      <!-- Text pane -->
+      <div class="tab-pane" id="pane-text">
+        <div class="form-group">
+          <label>회의 내용 (녹취록·메모·요약 등 자유 형식)</label>
+          <textarea id="textContent" placeholder="예)
+김팀장: 이번 분기 목표를 20% 상향 조정하자고 제안.
+이대리: 현재 인력으로는 무리라는 우려 제기.
+결론: 채용 완료 후 목표 재설정하기로 함.
+다음 회의: 5월 2일 오전 10시 예정."></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Generate button ──────────────────────── -->
+  <button class="btn btn-primary btn-lg" id="generateBtn" onclick="generate()">
+    ♥ &nbsp;회의록 생성하기
+  </button>
+
+  <div id="generateStatus" class="status-box hidden">
+    <div class="spinner"></div>
+    <span id="generateStatusMsg">회의록을 작성하고 있습니다…</span>
+  </div>
+
+  <div id="errorBox" class="alert alert-error hidden"></div>
+
+  <!-- ── Result ────────────────────────────────── -->
+  <div id="resultCard" class="result-card hidden">
+    <div class="result-header">
+      <div class="result-header-title">📋 &nbsp;생성된 회의록</div>
+      <div class="result-actions">
+        <button class="btn btn-secondary btn-sm" onclick="copyMinutes(this)">복사</button>
+        <button class="btn btn-secondary btn-sm" onclick="window.print()">인쇄 / PDF</button>
+      </div>
+    </div>
+    <div class="result-body">
+      <div id="minutesOutput"></div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- Taskbar -->
+<div class="win-taskbar">
+  <button class="taskbar-start">⊞ Start</button>
+  <div class="taskbar-divider"></div>
+  <div class="taskbar-item">♥ 회의록생성기</div>
+  <div class="taskbar-clock" id="taskbarClock">00:00</div>
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+let transcript = '';      // STT result text
+let accordionOpen = false;
+let currentTab = 'audio';
+let selectedFile = null;  // drag-and-drop로 선택된 파일 보관
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  loadKeys();
+  initDragDrop();
+  initClock();
+  // Pre-fill today's date
+  const today = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('fDate').value =
+    `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
+});
+
+// ── Taskbar clock ─────────────────────────────────────────────────────────────
+function initClock() {
+  function tick() {
+    const now = new Date();
+    const pad = n => String(n).padStart(2,'0');
+    document.getElementById('taskbarClock').textContent =
+      `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  }
+  tick();
+  setInterval(tick, 10000);
+}
+
+// ── API Key persistence ───────────────────────────────────────────────────────
+function saveKeys() {
+  const g = document.getElementById('groqKey').value.trim();
+  const m = document.getElementById('geminiKey').value.trim();
+  if (g) { localStorage.setItem('mm_groq', g); show('groqSaved'); }
+  if (m) { localStorage.setItem('mm_gemini', m); show('geminiSaved'); }
+  localStorage.setItem('mm_model', document.getElementById('geminiModel').value);
+}
+function loadKeys() {
+  const g = localStorage.getItem('mm_groq');
+  const m = localStorage.getItem('mm_gemini');
+  const model = localStorage.getItem('mm_model');
+  if (g) { document.getElementById('groqKey').value = g; show('groqSaved'); }
+  if (m) { document.getElementById('geminiKey').value = m; show('geminiSaved'); }
+  if (model) { document.getElementById('geminiModel').value = model; }
+  updateModelBadge();
+}
+function updateModelBadge() {
+  const model = document.getElementById('geminiModel').value;
+  document.getElementById('headerBadge').textContent =
+    `Groq · ${model}`;
+}
+
+// ── Tab switch ────────────────────────────────────────────────────────────────
+function switchTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('pane-' + tab).classList.add('active');
+}
+
+// ── Drag-and-drop ─────────────────────────────────────────────────────────────
+function initDragDrop() {
+  const area = document.getElementById('uploadArea');
+  area.addEventListener('dragover', e => { e.preventDefault(); area.classList.add('dragover'); });
+  area.addEventListener('dragleave', () => area.classList.remove('dragover'));
+  area.addEventListener('drop', e => {
+    e.preventDefault();
+    area.classList.remove('dragover');
+    const f = e.dataTransfer.files[0];
+    if (f) applyFile(f);
+  });
+}
+
+function onFileSelect(input) {
+  if (input.files[0]) applyFile(input.files[0]);
+}
+
+const GROQ_MAX_BYTES = 24 * 1024 * 1024; // 24 MB (25MB 제한에 안전 마진 적용)
+
+function applyFile(file) {
+  selectedFile = file;
+  clearError();
+  transcript = '';
+  hide('transcriptAccordion');
+  document.getElementById('accordionArrow').textContent = '▼';
+  accordionOpen = false;
+
+  const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+  const label = file.size > GROQ_MAX_BYTES ? `${sizeMB} MB - 자동 분할 처리` : `${sizeMB} MB`;
+  document.getElementById('fileName').textContent = `${file.name}  (${label})`;
+  show('filePill');
+  hide('uploadArea');
+}
+
+function clearFile() {
+  document.getElementById('audioFile').value = '';
+  transcript = '';
+  selectedFile = null;
+  hide('filePill');
+  hide('transcriptAccordion');
+  show('uploadArea');
+  resetTranscribeBtn();
+}
+
+function resetTranscribeBtn() {
+  const btn = document.getElementById('transcribeBtn');
+  btn.textContent = '🎙 변환하기';
+  btn.className = 'btn btn-primary btn-sm';
+  btn.disabled = false;
+}
+
+// ── Step 1: 음성 변환만 단독 실행 ─────────────────────────────────────────────
+async function transcribeOnly() {
+  const fileInput = document.getElementById('audioFile');
+  const file = selectedFile || fileInput.files[0];
+  if (!file) {
+    showError('파일을 먼저 선택해주세요.');
+    return;
+  }
+
+  clearError();
+  const btn = document.getElementById('transcribeBtn');
+  btn.disabled = true;
+  btn.textContent = '변환 중…';
+
+  try {
+    await transcribeAudio(file);
+    btn.textContent = '✓ 변환 완료';
+    btn.className = 'btn btn-success btn-sm';
+  } catch (err) {
+    showError(err.message);
+    resetTranscribeBtn();
+  }
+}
+
+// ── Transcript accordion ──────────────────────────────────────────────────────
+function toggleAccordion() {
+  accordionOpen = !accordionOpen;
+  document.getElementById('transcriptBody').style.display = accordionOpen ? 'block' : 'none';
+  document.getElementById('accordionArrow').textContent = accordionOpen ? '▲' : '▼';
+}
+
+// ── Groq Whisper STT ──────────────────────────────────────────────────────────
+async function transcribeAudio(file) {
+  const key = document.getElementById('groqKey').value.trim();
+  if (!key) throw new Error('Groq API 키를 입력하고 저장해주세요.');
+
+  show('transcribeStatus');
+  try {
+    let result;
+    if (file.size <= GROQ_MAX_BYTES) {
+      // 25MB 이하: 직접 전송
+      setTranscribeMsg('음성 변환 중…');
+      result = await transcribeChunk(file, key);
+    } else {
+      // 25MB 초과: Web Audio API로 디코딩 후 청크 분할
+      result = await transcribeLargeFile(file, key);
+    }
+
+    transcript = result.trim();
+    document.getElementById('transcriptBody').textContent = transcript;
+    show('transcriptAccordion');
+    return transcript;
+  } finally {
+    hide('transcribeStatus');
+  }
+}
+
+async function transcribeLargeFile(file, key) {
+  setTranscribeMsg('대용량 파일 분석 중… (오디오 디코딩)');
+
+  const arrayBuffer = await file.arrayBuffer();
+  const audioCtx = new AudioContext();
+
+  let audioBuffer;
+  try {
+    audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+  } catch {
+    throw new Error('오디오 파일을 디코딩할 수 없습니다. 지원 형식: mp3 · wav · m4a · webm · ogg');
+  }
+
+  // WAV 16-bit 기준 초당 바이트 수 계산 → 청크 길이(초) 결정
+  const bytesPerSec = audioBuffer.sampleRate * audioBuffer.numberOfChannels * 2;
+  const chunkSec = Math.floor(GROQ_MAX_BYTES / bytesPerSec);
+  const totalSec = audioBuffer.duration;
+  const numChunks = Math.ceil(totalSec / chunkSec);
+
+  let parts = [];
+
+  for (let i = 0; i < numChunks; i++) {
+    const startSec = i * chunkSec;
+    const endSec = Math.min(startSec + chunkSec, totalSec);
+    const startMin = Math.floor(startSec / 60);
+    const endMin = Math.ceil(endSec / 60);
+
+    setTranscribeMsg(`청크 ${i + 1} / ${numChunks} 변환 중… (${startMin}분 ~ ${endMin}분)`);
+
+    const chunkBuf = sliceAudioBuffer(audioCtx, audioBuffer, startSec, endSec);
+    const wavBlob = encodeWav(chunkBuf);
+    const text = await transcribeChunk(wavBlob, key);
+    parts.push(text.trim());
+  }
+
+  await audioCtx.close();
+  return parts.join(' ');
+}
+
+function sliceAudioBuffer(ctx, src, startSec, endSec) {
+  const sr = src.sampleRate;
+  const ch = src.numberOfChannels;
+  const s0 = Math.floor(startSec * sr);
+  const s1 = Math.floor(endSec * sr);
+  const out = ctx.createBuffer(ch, s1 - s0, sr);
+  for (let c = 0; c < ch; c++) {
+    out.getChannelData(c).set(src.getChannelData(c).subarray(s0, s1));
+  }
+  return out;
+}
+
+function encodeWav(buf) {
+  const sr = buf.sampleRate;
+  const ch = buf.numberOfChannels;
+  const len = buf.length;
+  const dataBytes = len * ch * 2;
+  const ab = new ArrayBuffer(44 + dataBytes);
+  const v = new DataView(ab);
+  const wstr = (off, s) => { for (let i = 0; i < s.length; i++) v.setUint8(off + i, s.charCodeAt(i)); };
+
+  wstr(0, 'RIFF'); v.setUint32(4, 36 + dataBytes, true);
+  wstr(8, 'WAVE'); wstr(12, 'fmt ');
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true);
+  v.setUint16(22, ch, true); v.setUint32(24, sr, true);
+  v.setUint32(28, sr * ch * 2, true); v.setUint16(32, ch * 2, true);
+  v.setUint16(34, 16, true); wstr(36, 'data');
+  v.setUint32(40, dataBytes, true);
+
+  let off = 44;
+  for (let i = 0; i < len; i++) {
+    for (let c = 0; c < ch; c++) {
+      const s = Math.max(-1, Math.min(1, buf.getChannelData(c)[i]));
+      v.setInt16(off, s < 0 ? s * 32768 : s * 32767, true);
+      off += 2;
+    }
+  }
+  return new Blob([ab], { type: 'audio/wav' });
+}
+
+async function transcribeChunk(fileOrBlob, key) {
+  const fd = new FormData();
+  const f = fileOrBlob instanceof File
+    ? fileOrBlob
+    : new File([fileOrBlob], 'chunk.wav', { type: 'audio/wav' });
+  fd.append('file', f);
+  fd.append('model', 'whisper-large-v3-turbo');
+  fd.append('response_format', 'text');
+  fd.append('language', 'ko');
+
+  const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${key}` },
+    body: fd
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(`Groq 오류 (${res.status}): ${err?.error?.message || res.statusText}`);
+  }
+  return res.text();
+}
+
+function setTranscribeMsg(msg) {
+  document.getElementById('transcribeMsg').textContent = msg;
+}
+
+// ── Gemini API (재시도 포함) ───────────────────────────────────────────────────
+async function callGemini(content, meta) {
+  const key = document.getElementById('geminiKey').value.trim();
+  if (!key) throw new Error('Gemini API 키를 입력하고 저장해주세요.');
+
+  const model = document.getElementById('geminiModel').value;
+  const prompt = buildPrompt(content, meta);
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+  const body = JSON.stringify({
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
+  });
+
+  const MAX_RETRIES = 3;
+  const RETRYABLE = new Set([429, 500, 502, 503, 504]);
+
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    const statusEl = document.getElementById('generateStatusMsg');
+    if (attempt === 1) {
+      statusEl.textContent = `${model} 로 회의록을 작성하고 있습니다…`;
+    } else {
+      statusEl.textContent = `서버 부하로 재시도 중… (${attempt - 1}/${MAX_RETRIES - 1}회)`;
+    }
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+    }
+
+    const err = await res.json().catch(() => ({}));
+    const msg = err?.error?.message || res.statusText;
+
+    if (RETRYABLE.has(res.status) && attempt < MAX_RETRIES) {
+      const delay = 2000 * Math.pow(2, attempt - 1); // 2s, 4s
+      await new Promise(r => setTimeout(r, delay));
+      continue;
+    }
+
+    // 최종 실패 - 친절한 안내 포함
+    const hint = res.status === 503
+      ? '\n\n해결 방법: 잠시 후 다시 시도하거나, 모델 선택기에서 다른 모델로 변경해보세요.'
+      : '';
+    throw new Error(`Gemini 오류 (${res.status}): ${msg}${hint}`);
+  }
+}
+
+// ── Prompt ────────────────────────────────────────────────────────────────────
+function buildPrompt(content, meta) {
+  return `# 역할
+당신은 회의록 작성 전문가입니다.
+사용자가 제공하는 회의 내용(녹취록·메모·요약 등 어떤 형태든)을 바탕으로
+아래 형식과 원칙에 따라 회의록을 작성합니다.
+
+---
+
+# 작성 원칙
+- 전체 분량은 A4 한 장 이내로 제한한다.
+- 추측·해석 없이 실제 논의된 내용만 기록한다.
+- 전문 용어와 고유명사는 원문 그대로 사용한다.
+- 각 항목은 설명 없이 내용만 간결하게 채운다.
+- 회의 내용에 없는 항목은 "해당 없음"으로 표기한다.
+- 불명확한 담당자·마감일은 "미정"으로 표기한다.
+
+---
+
+# 출력 형식 (반드시 마크다운으로 출력)
+
+## 기본 정보
+- 회의명: ${meta.title || '미정'}
+- 일시: ${meta.date || '미정'}
+- 장소: ${meta.location || '미정'}
+- 참석자: ${meta.participants || '미정'}
+- 작성자: ${meta.author || '미정'}
+
+## 안건 목록
+- (이번 회의에서 다룬 안건을 한 줄씩 나열)
+
+## 논의 내용 요약
+- (안건별로 핵심을 1~2줄 이내로 요약)
+
+## 결정 사항
+- (각 결정을 "~하기로 함" 형태로 한 줄씩 작성)
+
+## 액션 아이템
+| 할 일 | 담당자 | 마감일 |
+|------|--------|--------|
+|      |        |        |
+
+## 다음 회의
+- 예정일:
+- 다룰 안건:
+
+---
+
+위 형식을 그대로 유지하여 아래 회의 내용을 바탕으로 회의록을 작성하세요.
+기본 정보란은 위에서 제공한 값을 그대로 사용하세요.
+
+# 회의 내용
+${content}`;
+}
+
+// ── Step 2: 회의록 생성 (Gemini만) ───────────────────────────────────────────
+async function generate() {
+  clearError();
+
+  const meta = {
+    title:        document.getElementById('fTitle').value.trim(),
+    date:         document.getElementById('fDate').value.trim(),
+    location:     document.getElementById('fLocation').value.trim(),
+    participants: document.getElementById('fParticipants').value.trim(),
+    author:       document.getElementById('fAuthor').value.trim(),
+  };
+
+  let content = '';
+
+  try {
+    document.getElementById('generateBtn').disabled = true;
+
+    if (currentTab === 'audio') {
+      if (!transcript) throw new Error('먼저 🎙 변환하기 버튼을 눌러 음성을 텍스트로 변환해주세요.');
+      content = transcript;
+    } else {
+      content = document.getElementById('textContent').value.trim();
+      if (!content) throw new Error('회의 내용을 입력해주세요.');
+    }
+
+    show('generateStatus');
+    const markdown = await callGemini(content, meta);
+    hide('generateStatus');
+
+    renderMinutes(markdown);
+
+  } catch (err) {
+    hide('generateStatus');
+    showError(err.message);
+  } finally {
+    document.getElementById('generateBtn').disabled = false;
+  }
+}
+
+// ── Render markdown → HTML ────────────────────────────────────────────────────
+function renderMinutes(markdown) {
+  marked.setOptions({ gfm: true, breaks: true });
+  document.getElementById('minutesOutput').innerHTML = marked.parse(markdown);
+  show('resultCard');
+  document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── Copy ──────────────────────────────────────────────────────────────────────
+function copyMinutes(btn) {
+  const text = document.getElementById('minutesOutput').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓ 복사됨';
+    setTimeout(() => { btn.textContent = orig; }, 1800);
+  });
+}
+
+// ── UI helpers ────────────────────────────────────────────────────────────────
+function show(id) { document.getElementById(id).classList.remove('hidden'); }
+function hide(id) { document.getElementById(id).classList.add('hidden'); }
+function showError(msg) {
+  const box = document.getElementById('errorBox');
+  box.textContent = '⚠ ' + msg;
+  box.classList.remove('hidden');
+}
+function clearError() { hide('errorBox'); }
+</script>
+
+</body>
+</html>
