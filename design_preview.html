@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intro Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Architects+Daughter&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(
+      180deg,
+      #5bc8f5 0%,
+      #87d9f7 18%,
+      #a8e6f0 32%,
+      #c2eecc 55%,
+      #7ecf72 72%,
+      #5ab85e 100%
+    );
+    position: relative;
+  }
+
+  /* ── 구름들 ── */
+  .cloud {
+    position: absolute;
+    background: rgba(255,255,255,0.85);
+    border-radius: 50%;
+    filter: blur(18px);
+    pointer-events: none;
+  }
+  .c1 { width: 220px; height: 120px; top: 4%; left: -40px; filter: blur(22px); opacity: 0.9; }
+  .c2 { width: 180px; height: 100px; top: 8%; left: 120px; filter: blur(16px); opacity: 0.75; }
+  .c3 { width: 300px; height: 140px; top: 2%; right: -60px; filter: blur(24px); opacity: 0.8; }
+  .c4 { width: 160px; height: 90px; top: 18%; right: 40px; filter: blur(15px); opacity: 0.6; }
+  .c5 { width: 200px; height: 110px; top: 28%; left: -30px; filter: blur(20px); opacity: 0.5; }
+  .c6 { width: 160px; height: 160px; top: -20px; right: -20px; filter: blur(0px); background: rgba(255,255,255,0.6); border-radius: 50%; }
+  .c7 { width: 130px; height: 130px; bottom: 30px; left: -20px; filter: blur(0px); background: rgba(180,230,160,0.5); border-radius: 50%; }
+
+  /* ── 데코 요소 ── */
+  .deco {
+    position: absolute;
+    pointer-events: none;
+    animation: float 3.5s ease-in-out infinite;
+  }
+  .deco-star1  { font-size: 32px; top: 7%;  left: 8%;  animation-delay: 0s; }
+  .deco-star2  { font-size: 28px; bottom: 10%; right: 9%; animation-delay: 0.8s; }
+  .deco-pencil { font-size: 26px; top: 42%; left: 6%;  animation-delay: 1.2s; }
+  .deco-palette{ font-size: 26px; bottom: 22%; left: 15%; animation-delay: 0.4s; }
+  .deco-sparkle1 { font-size: 14px; top: 22%; left: 28%; color: white; animation-delay: 0.6s; }
+  .deco-sparkle2 { font-size: 12px; top: 55%; right: 18%; color: white; animation-delay: 1.5s; }
+  .deco-sparkle3 { font-size: 14px; bottom: 35%; right: 30%; color: white; animation-delay: 0.2s; }
+  .deco-exclaim  { font-size: 28px; top: 15%; right: 28%; font-family: Georgia, serif; color: #c49ef5; font-weight: bold; font-style: italic; animation-delay: 1s; }
+
+  @keyframes float {
+    0%,100% { transform: translateY(0px); }
+    50%      { transform: translateY(-10px); }
+  }
+
+  /* ── Win98 팝업 창 ── */
+  .win-popup {
+    position: relative;
+    z-index: 10;
+    width: 500px;
+    max-width: 92vw;
+    border-top: 2px solid #fff;
+    border-left: 2px solid #fff;
+    border-right: 2px solid #808080;
+    border-bottom: 2px solid #808080;
+    box-shadow: 2px 2px 0 #000, 6px 6px 20px rgba(0,0,0,0.25);
+  }
+
+  .win-titlebar {
+    background: linear-gradient(to right, #000080, #1084d0);
+    color: #fff;
+    font-family: 'MS Sans Serif', Tahoma, Arial, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 4px 6px 4px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+  }
+  .win-titlebar-left { display: flex; align-items: center; gap: 6px; }
+  .win-title-btns { display: flex; gap: 2px; }
+  .win-title-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 16px; height: 14px;
+    background: #d4d0c8;
+    border-top: 1px solid #fff; border-left: 1px solid #fff;
+    border-right: 1px solid #404040; border-bottom: 1px solid #404040;
+    font-size: 9px; color: #000; cursor: pointer;
+    font-family: 'Courier New', monospace;
+  }
+
+  .win-body {
+    background: rgba(212, 208, 200, 0.82);
+    backdrop-filter: blur(6px);
+    padding: 28px 32px 26px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    text-align: center;
+  }
+
+  /* ── MADDiE 스타일 타이포 ── */
+  /* 두 레이어: stroke(뒤) + gradient fill(앞) */
+  .big-line {
+    position: relative;
+    display: block;
+    font-family: 'Black Ops One', cursive;
+    line-height: 0.95;
+    white-space: nowrap;
+  }
+  .big-line .stroke {
+    display: block;
+    font-family: inherit;
+    font-size: inherit;
+    color: #111;
+    -webkit-text-stroke: 6px #111;
+    paint-order: stroke fill;
+  }
+  .big-line .fill {
+    position: absolute; inset: 0;
+    display: block;
+    font-family: inherit;
+    font-size: inherit;
+    background: linear-gradient(180deg, #d4faa8 0%, #90e84a 30%, #52c820 60%, #2da010 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .line-meeting   { font-size: 76px; }
+  .line-minutes   { font-size: 76px; }
+  .line-generator {
+    font-size: 36px;
+    margin-top: 6px;
+    letter-spacing: 0.18em;
+  }
+  .line-generator .stroke { -webkit-text-stroke: 4px #111; }
+
+  /* 구분선 */
+  .win-divider {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #808080, transparent);
+    margin: 18px 0;
+    opacity: 0.5;
+  }
+
+  /* START 버튼 — Win98 크롬, 텍스트는 MADDiE 스타일 */
+  .start-btn {
+    background: #d4d0c8;
+    border-top: 2px solid #fff;
+    border-left: 2px solid #fff;
+    border-right: 2px solid #404040;
+    border-bottom: 2px solid #404040;
+    padding: 8px 40px 9px;
+    cursor: pointer;
+    position: relative;
+    display: inline-block;
+  }
+  .start-btn .stroke {
+    font-family: 'Black Ops One', cursive;
+    font-size: 18px;
+    color: #111;
+    -webkit-text-stroke: 4px #111;
+    paint-order: stroke fill;
+    display: block;
+    letter-spacing: 0.2em;
+  }
+  .start-btn .fill {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Black Ops One', cursive;
+    font-size: 18px;
+    letter-spacing: 0.2em;
+    background: linear-gradient(180deg, #d4faa8 0%, #90e84a 35%, #52c820 65%, #2da010 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    padding: 8px 40px 9px;
+  }
+  .start-btn:hover { filter: brightness(1.06); }
+  .start-btn:active {
+    border-top: 2px solid #404040; border-left: 2px solid #404040;
+    border-right: 2px solid #fff; border-bottom: 2px solid #fff;
+  }
+</style>
+</head>
+<body>
+
+<!-- 구름 레이어 -->
+<div class="cloud c1"></div>
+<div class="cloud c2"></div>
+<div class="cloud c3"></div>
+<div class="cloud c4"></div>
+<div class="cloud c5"></div>
+<div class="cloud c6"></div>
+<div class="cloud c7"></div>
+
+<!-- 데코 -->
+<div class="deco deco-star1">⭐</div>
+<div class="deco deco-star2">⭐</div>
+<div class="deco deco-pencil">✏️</div>
+<div class="deco deco-palette">🎨</div>
+<div class="deco deco-sparkle1">✿</div>
+<div class="deco deco-sparkle2">✿</div>
+<div class="deco deco-sparkle3">✦</div>
+<div class="deco deco-exclaim">!</div>
+
+<!-- Win98 팝업 -->
+<div class="win-popup">
+  <div class="win-titlebar">
+    <div class="win-titlebar-left">
+      <span>📋</span>
+      <span>Meeting Minutes Generator</span>
+    </div>
+    <div class="win-title-btns">
+      <div class="win-title-btn">_</div>
+      <div class="win-title-btn">□</div>
+      <div class="win-title-btn">✕</div>
+    </div>
+  </div>
+  <div class="win-body">
+
+    <div class="big-line line-meeting">
+      <span class="stroke">MEETING</span>
+      <span class="fill">MEETING</span>
+    </div>
+    <div class="big-line line-minutes">
+      <span class="stroke">MINUTES</span>
+      <span class="fill">MINUTES</span>
+    </div>
+    <div class="big-line line-generator">
+      <span class="stroke">GENERATOR</span>
+      <span class="fill">GENERATOR</span>
+    </div>
+
+    <div class="win-divider"></div>
+
+    <button class="start-btn">
+      <span class="stroke">♥ START</span>
+      <span class="fill">♥ START</span>
+    </button>
+
+  </div>
+</div>
+
+</body>
+</html>

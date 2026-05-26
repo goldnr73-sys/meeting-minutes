@@ -11,6 +11,7 @@
   - 재시도 로직: 최대 3회, 지수 백오프 (2s → 4s)
 - **렌더링**: marked.js (CDN) — 마크다운 → HTML
 - **스타일**: Windows 98 레트로 UI (순수 CSS, 외부 라이브러리 없음)
+- **인트로 폰트**: Google Fonts — `Black Ops One` (CDN, 인트로 전용)
 
 ## API 키 관리
 - localStorage에 저장: `mm_groq`, `mm_gemini`, `mm_model`
@@ -20,13 +21,17 @@
 ```
 meeting_minutes.html   # 앱 전체 (HTML + CSS + JS 통합)
 .gitignore             # 미디어 파일, .env 제외
+design_preview.html    # 디자인 목업 전용 (배포 불필요)
 ```
 
 ## 주요 기능
-1. **인트로 시작화면** (`#intro-screen`): 메인 앱과 동일한 Win98 스타일 스플래시
-   - 배경: `#1a6fd4` 파란 배경 + 점 패턴 + 부유하는 핑크 하트 (메인 앱과 동일)
-   - 중앙: Win98 다이얼로그 창 (`.intro-splash`) — 아이콘, 제목, 설명, 시작 버튼
-   - "♥ 시작하기" 클릭 → 0.5초 페이드아웃 후 메인 앱 진입 (`startApp()`)
+1. **인트로 시작화면** (`#intro-screen`): Y2K 하늘 테마 + Win98 팝업 혼합 스타일
+   - 배경: 하늘 파랑 → 초록 그라디언트 + 흐린 구름 블롭 (`.intro-cloud`)
+   - 데코: ⭐ ✏️ 🎨 ✿ ✦ 등 부유하는 요소 (`.intro-deco`, `@keyframes introDeco`)
+   - 중앙: Win98 다이얼로그 창 (`.intro-splash`) — 반투명 배경 (`backdrop-filter: blur`)
+   - 타이포: `Black Ops One` 폰트, MEETING / MINUTES / GENERATOR
+     - 두 레이어 겹치기 — `.i-stroke`(검정 아웃라인) + `.i-fill`(초록 그라디언트)
+   - "♥ START" 클릭 → 0.5초 페이드아웃 후 메인 앱 진입 (`startApp()`)
    - 프로젝트명 입력 시 회의명 자동 연동
 2. 음성 파일 업로드 (드래그앤드롭, 클릭) → Groq STT → 텍스트 미리보기
 3. 텍스트 직접 입력 탭

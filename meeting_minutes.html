@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>회의록 자동 생성기</title>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -598,43 +599,134 @@
       position: fixed;
       inset: 0;
       z-index: 9999;
-      background-color: #1a6fd4;
-      background-image: radial-gradient(circle, rgba(255,255,255,0.18) 1px, transparent 1px);
-      background-size: 20px 20px;
+      background: linear-gradient(180deg,
+        #5bc8f5 0%, #87d9f7 18%, #a8e6f0 32%,
+        #c2eecc 55%, #7ecf72 72%, #5ab85e 100%);
       display: flex;
       align-items: center;
       justify-content: center;
       transition: opacity 0.5s ease;
+      overflow: hidden;
     }
     #intro-screen.fade-out { opacity: 0; pointer-events: none; }
 
+    /* 구름 */
+    .intro-cloud {
+      position: absolute;
+      background: rgba(255,255,255,0.85);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    /* 떠다니는 데코 */
+    .intro-deco {
+      position: absolute;
+      pointer-events: none;
+      animation: introDeco 3.5s ease-in-out infinite;
+    }
+    @keyframes introDeco {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-10px); }
+    }
+
+    /* Win98 팝업 창 */
     .intro-splash {
-      width: 420px;
+      position: relative;
+      z-index: 10;
+      width: 500px;
       max-width: calc(100vw - 40px);
-      background: #d4d0c8;
       border-top: 2px solid #fff;
       border-left: 2px solid #fff;
       border-right: 2px solid #808080;
       border-bottom: 2px solid #808080;
+      box-shadow: 2px 2px 0 #000, 6px 6px 20px rgba(0,0,0,0.25);
     }
     .intro-splash-body {
-      padding: 28px 32px 24px;
+      background: rgba(212, 208, 200, 0.82);
+      backdrop-filter: blur(6px);
+      padding: 28px 32px 26px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       text-align: center;
-      font-family: 'MS Sans Serif', Tahoma, Arial, sans-serif;
     }
-    .intro-splash-icon { font-size: 52px; margin-bottom: 14px; line-height: 1; }
-    .intro-splash-title { font-size: 18px; font-weight: 700; color: #000; margin-bottom: 4px; }
-    .intro-splash-sub {
-      font-size: 11px; color: #555; font-family: 'Courier New', monospace; margin-bottom: 0;
+
+    /* MADDiE 스타일 타이포 */
+    .intro-big-line {
+      position: relative;
+      display: block;
+      font-family: 'Black Ops One', cursive;
+      line-height: 0.95;
+      white-space: nowrap;
     }
-    .intro-splash-hr {
-      border: none;
-      border-top: 2px solid #808080;
-      border-bottom: 1px solid #fff;
-      margin: 16px 0;
+    .intro-big-line .i-stroke {
+      display: block;
+      font-family: inherit;
+      font-size: inherit;
+      color: #111;
+      -webkit-text-stroke: 6px #111;
+      paint-order: stroke fill;
     }
-    .intro-splash-desc { font-size: 12px; color: #333; line-height: 1.75; margin-bottom: 20px; }
-    .intro-splash-version { font-size: 10px; color: #808080; margin-top: 12px; font-family: 'Courier New', monospace; }
+    .intro-big-line .i-fill {
+      position: absolute; inset: 0;
+      display: block;
+      font-family: inherit;
+      font-size: inherit;
+      background: linear-gradient(180deg, #d4faa8 0%, #90e84a 30%, #52c820 60%, #2da010 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .intro-line-meeting  { font-size: 76px; }
+    .intro-line-minutes  { font-size: 76px; }
+    .intro-line-gen      { font-size: 36px; margin-top: 6px; letter-spacing: 0.18em; }
+    .intro-line-gen .i-stroke { -webkit-text-stroke: 4px #111; }
+
+    .intro-divider {
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(to right, transparent, #808080, transparent);
+      margin: 18px 0;
+      opacity: 0.5;
+    }
+
+    /* START 버튼 */
+    .intro-start-btn {
+      background: #d4d0c8;
+      border-top: 2px solid #fff;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #404040;
+      border-bottom: 2px solid #404040;
+      padding: 8px 40px 9px;
+      cursor: pointer;
+      position: relative;
+      display: inline-block;
+    }
+    .intro-start-btn .i-stroke {
+      font-family: 'Black Ops One', cursive;
+      font-size: 18px;
+      color: #111;
+      -webkit-text-stroke: 4px #111;
+      paint-order: stroke fill;
+      display: block;
+      letter-spacing: 0.2em;
+    }
+    .intro-start-btn .i-fill {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Black Ops One', cursive;
+      font-size: 18px;
+      letter-spacing: 0.2em;
+      background: linear-gradient(180deg, #d4faa8 0%, #90e84a 35%, #52c820 65%, #2da010 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .intro-start-btn:hover { filter: brightness(1.06); }
+    .intro-start-btn:active {
+      border-top: 2px solid #404040; border-left: 2px solid #404040;
+      border-right: 2px solid #fff;  border-bottom: 2px solid #fff;
+    }
     @media print { #intro-screen { display: none !important; } }
   </style>
 </head>
@@ -643,20 +735,31 @@
 <!-- Intro Screen -->
 <div id="intro-screen">
 
-  <!-- 메인 앱과 동일한 하트 데코 -->
-  <span class="heart" style="left:3%;top:18%;font-size:18px;animation-delay:0s;color:#ff1493">♥</span>
-  <span class="heart" style="left:8%;top:55%;font-size:26px;animation-delay:0.6s">♥</span>
-  <span class="heart" style="left:2%;top:80%;font-size:16px;animation-delay:1.2s;color:#ff1493">♥</span>
-  <span class="heart" style="right:3%;top:22%;font-size:24px;animation-delay:0.3s">♥</span>
-  <span class="heart" style="right:7%;top:60%;font-size:18px;animation-delay:0.9s;color:#ff1493">♥</span>
-  <span class="heart" style="right:2%;top:85%;font-size:28px;animation-delay:1.5s">♥</span>
+  <!-- 구름 레이어 -->
+  <div class="intro-cloud" style="width:220px;height:120px;top:4%;left:-40px;filter:blur(22px);opacity:0.9"></div>
+  <div class="intro-cloud" style="width:180px;height:100px;top:8%;left:120px;filter:blur(16px);opacity:0.75"></div>
+  <div class="intro-cloud" style="width:300px;height:140px;top:2%;right:-60px;filter:blur(24px);opacity:0.8"></div>
+  <div class="intro-cloud" style="width:160px;height:90px;top:18%;right:40px;filter:blur(15px);opacity:0.6"></div>
+  <div class="intro-cloud" style="width:200px;height:110px;top:28%;left:-30px;filter:blur(20px);opacity:0.5"></div>
+  <div class="intro-cloud" style="width:160px;height:160px;top:-20px;right:-20px;background:rgba(255,255,255,0.6)"></div>
+  <div class="intro-cloud" style="width:130px;height:130px;bottom:30px;left:-20px;background:rgba(180,230,160,0.5)"></div>
 
-  <!-- Win98 스플래시 창 -->
+  <!-- 데코 요소 -->
+  <span class="intro-deco" style="font-size:32px;top:7%;left:8%;animation-delay:0s">⭐</span>
+  <span class="intro-deco" style="font-size:28px;bottom:10%;right:9%;animation-delay:0.8s">⭐</span>
+  <span class="intro-deco" style="font-size:26px;top:42%;left:6%;animation-delay:1.2s">✏️</span>
+  <span class="intro-deco" style="font-size:26px;bottom:22%;left:15%;animation-delay:0.4s">🎨</span>
+  <span class="intro-deco" style="font-size:14px;top:22%;left:28%;color:white;animation-delay:0.6s">✿</span>
+  <span class="intro-deco" style="font-size:12px;top:55%;right:18%;color:white;animation-delay:1.5s">✿</span>
+  <span class="intro-deco" style="font-size:14px;bottom:35%;right:30%;color:white;animation-delay:0.2s">✦</span>
+  <span class="intro-deco" style="font-size:28px;top:15%;right:28%;color:#c49ef5;font-style:italic;font-weight:bold;animation-delay:1s">!</span>
+
+  <!-- Win98 팝업 -->
   <div class="intro-splash">
     <div class="win-titlebar">
       <div class="win-titlebar-left">
         <span class="win-titlebar-icon">📋</span>
-        <span>회의록 자동생성기</span>
+        <span>Meeting Minutes Generator</span>
       </div>
       <div class="win-title-btns">
         <span class="win-title-btn">─</span>
@@ -665,18 +768,23 @@
       </div>
     </div>
     <div class="intro-splash-body">
-      <div class="intro-splash-icon">📋</div>
-      <div class="intro-splash-title">회의록 자동생성기</div>
-      <div class="intro-splash-sub">AI Meeting Minutes Generator v2.5.0</div>
-      <hr class="intro-splash-hr">
-      <p class="intro-splash-desc">
-        음성 파일이나 텍스트를 입력하면<br>
-        AI가 구조화된 회의록을 자동으로 작성합니다.<br>
-        <br>
-        <strong>Groq Whisper</strong> &nbsp;·&nbsp; <strong>Gemini AI</strong>
-      </p>
-      <button class="btn btn-primary btn-lg" onclick="startApp()">♥ &nbsp;시작하기</button>
-      <p class="intro-splash-version">© 2025 · Groq Whisper + Gemini AI</p>
+      <div class="intro-big-line intro-line-meeting">
+        <span class="i-stroke">MEETING</span>
+        <span class="i-fill">MEETING</span>
+      </div>
+      <div class="intro-big-line intro-line-minutes">
+        <span class="i-stroke">MINUTES</span>
+        <span class="i-fill">MINUTES</span>
+      </div>
+      <div class="intro-big-line intro-line-gen">
+        <span class="i-stroke">GENERATOR</span>
+        <span class="i-fill">GENERATOR</span>
+      </div>
+      <div class="intro-divider"></div>
+      <button class="intro-start-btn" onclick="startApp()">
+        <span class="i-stroke">♥ START</span>
+        <span class="i-fill">♥ START</span>
+      </button>
     </div>
   </div>
 
