@@ -592,9 +592,80 @@
       .result-body { padding: 12px; }
       .heart { display: none; }
     }
+
+    /* ── Intro Screen ────────────────────────────────── */
+    #intro-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background-color: #1a6fd4;
+      background-image: radial-gradient(circle, rgba(255,255,255,0.18) 1px, transparent 1px);
+      background-size: 20px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.5s ease;
+    }
+    #intro-screen.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .intro-window {
+      width: 360px;
+      max-width: calc(100vw - 40px);
+      background: #d4d0c8;
+      border-top: 2px solid #fff;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #808080;
+      border-bottom: 2px solid #808080;
+      position: relative;
+      z-index: 1;
+    }
+    .intro-body {
+      padding: 28px 24px 24px;
+      text-align: center;
+      font-family: 'MS Sans Serif', Tahoma, Arial, sans-serif;
+    }
+    .intro-icon { font-size: 48px; margin-bottom: 12px; }
+    .intro-title { font-size: 18px; font-weight: 700; color: #000; margin-bottom: 6px; }
+    .intro-sub { font-size: 11px; color: #555; margin-bottom: 16px; font-family: 'Courier New', monospace; }
+    .intro-desc { font-size: 12px; color: #333; line-height: 1.7; margin-bottom: 24px; }
+    .intro-hint { font-size: 10px; color: #808080; margin-top: 10px; }
+    .intro-start-btn { margin: 0 auto; max-width: 220px; }
+    @media print { #intro-screen { display: none !important; } }
   </style>
 </head>
 <body>
+
+<!-- Intro Screen -->
+<div id="intro-screen">
+  <span class="heart" style="left:5%;top:15%;font-size:20px;animation-delay:0s;color:#ff1493" aria-hidden="true">♥</span>
+  <span class="heart" style="left:9%;top:62%;font-size:28px;animation-delay:0.7s" aria-hidden="true">♥</span>
+  <span class="heart" style="right:6%;top:20%;font-size:22px;animation-delay:0.3s" aria-hidden="true">♥</span>
+  <span class="heart" style="right:10%;top:68%;font-size:18px;animation-delay:1.1s;color:#ff1493" aria-hidden="true">♥</span>
+  <span class="heart" style="left:48%;top:88%;font-size:16px;animation-delay:0.5s" aria-hidden="true">♥</span>
+  <div class="intro-window">
+    <div class="win-titlebar">
+      <div class="win-titlebar-left">
+        <span class="win-titlebar-icon">📋</span>
+        <span>회의록 자동 생성기</span>
+      </div>
+      <div class="win-title-btns">
+        <span class="win-title-btn">─</span>
+        <span class="win-title-btn">□</span>
+        <span class="win-title-btn">✕</span>
+      </div>
+    </div>
+    <div class="intro-body">
+      <div class="intro-icon">📋</div>
+      <h1 class="intro-title">회의록 자동 생성기</h1>
+      <p class="intro-sub">Groq Whisper + Gemini AI</p>
+      <p class="intro-desc">음성 파일이나 텍스트를 입력하면<br>AI가 구조화된 회의록을 자동으로 작성합니다.</p>
+      <button class="btn btn-primary btn-lg intro-start-btn" onclick="startApp()">♥ &nbsp;시작하기</button>
+      <p class="intro-hint">클릭하여 시작</p>
+    </div>
+  </div>
+</div>
 
 <!-- Hearts decoration -->
 <div class="hearts-deco" aria-hidden="true">
@@ -804,6 +875,13 @@
 </div>
 
 <script>
+// ── Intro ────────────────────────────────────────────────────────────────────
+function startApp() {
+  const intro = document.getElementById('intro-screen');
+  intro.classList.add('fade-out');
+  setTimeout(() => { intro.style.display = 'none'; }, 500);
+}
+
 // ── State ────────────────────────────────────────────────────────────────────
 let transcript = '';      // STT result text
 let accordionOpen = false;
